@@ -26,8 +26,7 @@ public class CarController {
 
 
     @PostMapping("/add")
-
-
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<Response>addCar(
 
 
@@ -101,7 +100,7 @@ public class CarController {
     }
 
     @PutMapping("/update/{carId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<Response> updateCar(
             @PathVariable Long carId,
             @RequestParam(value = "photo", required = false) MultipartFile photo,
@@ -116,7 +115,7 @@ public class CarController {
     }
 
     @DeleteMapping("/delete/{carId}")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<Response> deleteCar(@PathVariable String carId) {
         Response response = carService.deleteCar(carId);
         return ResponseEntity.status(response.getStatusCode()).body(response);

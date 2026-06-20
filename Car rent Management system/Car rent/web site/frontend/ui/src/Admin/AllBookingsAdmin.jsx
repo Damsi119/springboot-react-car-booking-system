@@ -100,7 +100,6 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
 
 const AllBookingsAdmin = () => {
   const theme = useTheme();
@@ -378,6 +377,12 @@ const AllBookingsAdmin = () => {
     }).format(amount);
   }, []);
 
+  const escapeCsvValue = useCallback((value) => {
+    const text = value === null || value === undefined ? "" : String(value);
+    const safeText = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+    return /[",\r\n]/.test(safeText) ? `"${safeText.replace(/"/g, '""')}"` : safeText;
+  }, []);
+
   // Handle row selection
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
@@ -437,12 +442,13 @@ const AllBookingsAdmin = () => {
       'Created At': formatDate(booking.createdAt),
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Bookings");
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(data, `bookings_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const headers = Object.keys(exportData[0] || {});
+    const csvRows = [
+      headers.map(escapeCsvValue).join(","),
+      ...exportData.map(row => headers.map(header => escapeCsvValue(row[header])).join(",")),
+    ];
+    const data = new Blob([csvRows.join("\r\n")], { type: 'text/csv;charset=utf-8' });
+    saveAs(data, `bookings_${new Date().toISOString().split('T')[0]}.csv`);
     
     setSuccess("Bookings exported successfully!");
   };

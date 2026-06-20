@@ -23,7 +23,7 @@ public class BookingController {
     // Book a car
     @PostMapping("/book-car/{carId}/{userId}")
 
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN') or (hasAuthority('ROLE_USER') and #userId == principal.id)")
     public ResponseEntity<Response> saveBooking(@PathVariable Long carId,
                                                 @PathVariable Long userId,
                                                 @RequestBody Booking bookingRequest) {
@@ -34,7 +34,7 @@ public class BookingController {
 
     // Get all bookings (Admin only)
     @GetMapping("/all")
-    @PreAuthorize("hasAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<Response> getAllBookings() {
         Response response = bookingService.getAllBookings();
         return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -50,7 +50,7 @@ public class BookingController {
 
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN') or (hasAuthority('ROLE_USER') and #userId == principal.id)")
     public ResponseEntity<List<BookingDTO>> getBookingsByUser(@PathVariable Long userId) {
         List<Booking> bookings = bookingService.getBookingsByUser(userId); // returns List<Booking>
 
@@ -63,6 +63,7 @@ public class BookingController {
     }
 
     @DeleteMapping("/cancel/{bookingId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Response> cancelBooking(@PathVariable String bookingId) {
         Response response = bookingService.cancelBooking(Long.valueOf(bookingId));
         return ResponseEntity.status(response.getStatusCode()).body(response);

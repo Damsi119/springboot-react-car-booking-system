@@ -21,7 +21,7 @@ public class UserController {
 
     // Admin-only: get all users
     @GetMapping("/all")
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
 
     public ResponseEntity<Response> getAllUsers() {
         Response response = userService.getAllUsers();
@@ -30,6 +30,7 @@ public class UserController {
 
     // Public: get user by ID
     @GetMapping("/get-by-id/{userId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN') or (hasAuthority('ROLE_USER') and #userId == principal.id)")
     public ResponseEntity<Response> getUserById(@PathVariable Long userId) {
         Response response = userService.getUsersById(userId);
         return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -37,7 +38,7 @@ public class UserController {
 
     // Admin-only: delete user
     @DeleteMapping("/delete/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'ROLE_ADMIN')")
     public ResponseEntity<Response> deleteUser(@PathVariable Long userId) {
         Response response = userService.deleteUser(userId);
         return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -53,6 +54,7 @@ public class UserController {
     }
 
     @GetMapping("/my-bookings")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Response> getMyBookingHistory() {
         // Get the currently logged-in user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

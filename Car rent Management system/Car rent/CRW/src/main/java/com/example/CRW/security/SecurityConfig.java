@@ -5,6 +5,7 @@ import com.example.CRW.service.CustomerUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -39,12 +40,20 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/auth/**","/cars/**","/bookings/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/**").permitAll()
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/cars/all",
+                                "/cars/categories",
+                                "/cars/car-by-id/**",
+                                "/cars/all-available-cars",
                                 "/cars/available-cars-by-date-and-vehicleCategory"
-                        ).hasRole("USER")
-
-
+                        ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/bookings/get-by-confirmation-code/**"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

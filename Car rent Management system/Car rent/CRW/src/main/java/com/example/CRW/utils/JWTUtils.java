@@ -3,6 +3,7 @@ package com.example.CRW.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -17,18 +18,24 @@ import java.util.function.Function;
 
 public class JWTUtils {
 
+    private final long expirationTime;
+    private final SecretKey key;
 
-    private static final long EXPIRATION_TIME =  1000 * 60 * 24 * 7;// for 7 days
+    public JWTUtils(
+            @Value("${jwt.secret}") String secretKey,
+            @Value("${jwt.expiration-ms}") long expirationTime
+    ) {
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET environment variable must be set");
+        }
 
-    private final SecretKey Key;
+        byte[] keyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT_SECRET must be at least 32 bytes for HS256");
+        }
 
-    public JWTUtils() {
-
-        final String SECRET_KEY =
-                "CRW_SUPER_SECRET_KEY_2025_@#123456789";
-
-        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
-        this.Key = new SecretKeySpec(keyBytes, "HmacSHA256");
+        this.expirationTime = expirationTime;
+        this.key = new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 
 
@@ -41,9 +48,9 @@ public class JWTUtils {
 
                 .setIssuedAt(new Date())
                 .setExpiration(
-                        new Date(System.currentTimeMillis() + EXPIRATION_TIME)
+                        new Date(System.currentTimeMillis() + expirationTime)
                 )
-                .signWith(Key, SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -54,7 +61,7 @@ public class JWTUtils {
 
     private <T> T extractClaims(String token, Function<Claims, T> claimsTFunction) {
         Claims claims = Jwts.parserBuilder()
-                .setSigningKey(Key)
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
